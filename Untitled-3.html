@@ -1,0 +1,381 @@
+
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1080px;margin:0 auto;padding:32px 20px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}
+    h1{font-size:28px;margin:0}
+    nav{display:flex;gap:12px;flex-wrap:wrap}
+    nav a{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:}
+    section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin:18px 0}
+    h2{margin-top:0;font-size:22px}
+    h3{margin:14px 0 8px;font-size:18px;}
+    ul{margin:8px 0 0 20px}
+    .grid{display:grid;gap:12px}
+    @media(min-width:800px){.grid.cols-2{grid-template-columns:1fr 1fr}}
+    table{width:100%;border-collapse:separate;border-spacing:0;margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+    th{text-align:left;color:#cce0ff}
+    tr:last-child td{border-bottom:none}
+    code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#0b1220;border:1px solid var(--border);padding:2px 6px;border-radius:6px}
+    pre{border:1px solid var(--border);padding:14px;border-radius:12px;overflow:auto}
+    .note{font-size:14px;color:var(--muted)}
+    footer{margin:28px 0 12px;color:var(--muted);font-size:13px;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <nav>
+        <a href="#goals">Goals &amp; Scope</a>
+        <a href="#users">Target Users &amp; Flows</a>
+        <a href="#arch">High‑Level Architecture</a>
+        <a href="#stack">Recommended Stack</a>
+        <a href="#data">Data Model</a>
+        <a href="#search">Search &amp; Filtering</a>
+        <a href="#api">API Design</a>
+        <a href="#frontend">Frontend Structure</a>
+        <a href="#i18n">i18n &amp; Hreflang</a>
+        <a href="#security">Security</a>
+        <a href="#perf">Performance</a>
+        <a href="#devops">DevOps</a>
+        <a href="#etl">ETL</a>
+        <a href="#links">Notes &amp; Links</a>
+      </nav>
+    </header>
+
+    <section id="goals">
+      <h2>Goals &amp; Scope</h2>
+      <h3>Business goals</h3>
+      <ul>
+        <li>Publish a high‑quality catalog of ICs, passives, modules, and semiconductor products with searchable parametrics.</li>
+        <li>Enable Request‑for‑Quote (RFQ), lead‑time visibility, and optional e‑commerce checkout (phase 2).</li>
+        <li>Rank well on Google with structured data, localized content (multi‑language), and fast web vitals.</li>
+      </ul>
+      <h3>Out of scope (phase 1)</h3>
+      <ul>
+        <li>Full multi‑warehouse WMS, marketplace integrations, and complex tax engine (can be phase 2+).</li>
+      </ul>
+    </section>
+
+    <section id="users">
+      <h2>Target Users &amp; Flows</h2>
+      <h3>Personas</h3>
+      <ul>
+        <li><strong>Hardware Engineer:</strong> searches by part number, filters by voltage/current/package, downloads datasheets, compares.</li>
+        <li><strong>Purchasing/Buyer:</strong> searches alternates, checks MOQ/price breaks/stock, submits RFQ.</li>
+        <li><strong>FAE/Sales:</strong> manages quotations, approvals, and catalog content.</li>
+      </ul>
+      <h3>Core flows</h3>
+      <ul>
+        <li>Search → Parametric filter → Product detail → Download datasheet → RFQ.</li>
+        <li>Direct part‑number search → Product detail → Add to cart (phase 2) or RFQ.</li>
+        <li>Category browsing → Comparison → RFQ/Cart.</li>
+      </ul>
+    </section>
+
+    <section id="arch">
+      <h2>High‑Level Architecture</h2>
+      <pre>
+[Client: Next.js/React] —HTTP/HTTPS→ [API Gateway] —→ [Backend (NestJS)]
+                                         ├─ PostgreSQL (catalog, orders, RFQ)
+                                         ├─ OpenSearch/Elasticsearch (search)
+                                         ├─ Redis (cache, sessions, rate limit)
+                                         ├─ S3-compatible object store (images/datasheets)
+                                         └─ Message Queue (RabbitMQ/SQS) for ETL &amp; async jobs
+
+[CDN/Edge: Cloudflare/Fastly] in front of client + asset bucket
+      </pre>
+    </section>
+
+    <section id="stack">
+      <h2>Recommended stack</h2>
+      <div class="grid cols-2">
+        <div>
+          <h3>Frontend</h3>
+          <ul>
+            <li>Next.js 14 (App Router), React 18, TypeScript</li>
+            <li>Tailwind CSS, shadcn/ui, TanStack Query, Zod</li>
+          </ul>
+          <h3>Backend</h3>
+          <ul>
+            <li>NestJS (TypeScript), Prisma ORM</li>
+            <li>OpenAPI/Swagger, class‑validator, BullMQ</li>
+          </ul>
+          <h3>DB &amp; Search</h3>
+          <ul>
+            <li>PostgreSQL 15+ (Aurora/RDS or managed Postgres)</li>
+            <li>OpenSearch/Elasticsearch 8.x</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Cache &amp; Storage</h3>
+          <ul>
+            <li>Redis 7 (Upstash/ElastiCache), HTTP caching at CDN</li>
+            <li>S3/MinIO for images &amp; PDFs; Imgproxy/Thumbor for transforms</li>
+          </ul>
+          <h3>Auth &amp; Infra</h3>
+          <ul>
+            <li>Keycloak or Auth0 (OIDC), JWT access tokens, RBAC</li>
+            <li>Docker, Kubernetes (EKS/GKE) or ECS Fargate; Terraform for IaC</li>
+          </ul>
+          <h3>Monitoring</h3>
+          <ul>
+            <li>Prometheus/Grafana, OpenTelemetry, ELK/EFK, Sentry</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="data">
+      <h2>Data Model (Core Tables)</h2>
+      <table>
+        <thead><tr><th>Table</th><th>Key Fields</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>manufacturer</strong></td><td>id (PK), name, website, country</td><td>OEM/brand metadata</td></tr>
+          <tr><td><strong>category</strong></td><td>id, parent_id, slug, name_i18n (JSONB)</td><td>Tree for parametric filters</td></tr>
+          <tr><td><strong>product</strong></td><td>id, mfr_part (unique), manufacturer_id, category_id, description_i18n (JSONB), lifecycle_status, image_key, datasheet_key</td><td>A distinct MPN</td></tr>
+          <tr><td><strong>product_variant</strong></td><td>id, product_id, sku, package, moq, spq, lead_time_days, lifecycle_status</td><td>Pack‑level differences</td></tr>
+          <tr><td><strong>parameter</strong></td><td>id, category_id, code, name_i18n, unit, type (number/text/enum/boolean), min,max, precision</td><td>Defines filterable specs</td></tr>
+          <tr><td><strong>product_param</strong></td><td>product_id, parameter_id, value_num, value_text, value_enum</td><td>EAV for parametrics</td></tr>
+          <tr><td><strong>price_tier</strong></td><td>id, variant_id, qty_from, qty_to, price_usd</td><td>Break pricing</td></tr>
+          <tr><td><strong>inventory_lot</strong></td><td>id, variant_id, stock_qty, warehouse_id, msd_level, expiry_at</td><td>Stock details</td></tr>
+          <tr><td><strong>asset</strong></td><td>id, key, mime, size, sha256, locale, kind (image/datasheet/cert)</td><td>S3 keys</td></tr>
+          <tr><td><strong>rfq</strong></td><td>id, email, company, phone, country, message, created_at, status</td><td>RFQ header</td></tr>
+          <tr><td><strong>rfq_item</strong></td><td>id, rfq_id, variant_id, qty, target_price</td><td>RFQ lines</td></tr>
+          <tr><td><strong>user</strong></td><td>id, email, password_hash (if not external), role</td><td>Admin/FAE/Sales</td></tr>
+        </tbody>
+      </table>
+      <h3>Indexes</h3>
+      <ul>
+        <li><code>product.mfr_part</code> (btree, unique), <code>product.manufacturer_id</code>, <code>product.category_id</code></li>
+        <li>GIN on <code>description_i18n</code> for full‑text; <code>product_param(parameter_id, value_*)</code> for filters.</li>
+      </ul>
+    </section>
+
+    <section id="search">
+      <h2>Search &amp; Parametric Filtering</h2>
+      <p><strong>Elasticsearch/OpenSearch index:</strong> <code>products_v1</code></p>
+      <ul>
+        <li>Part‑number analyzers (preserve dashes/uppercase, edge n‑grams 2–20, keyword field for exact).</li>
+        <li>Synonyms for common alternates (e.g., “µF” ↔ “uF”).</li>
+        <li>Pinned queries for promoted parts.</li>
+      </ul>
+      <h3>Sample mapping</h3>
+      <pre>{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "part_analyzer": {
+          "tokenizer": "keyword",
+          "filter": ["uppercase"]
+        },
+        "part_edge": {
+          "tokenizer": "edge_ngram",
+          "filter": ["uppercase"],
+          "tokenizer": {
+            "type": "edge_ngram",
+            "min_gram": 2,
+            "max_gram": 20
+          }
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "mfr_part": {"type": "text", "analyzer": "part_edge", "fields": {"exact": {"type": "keyword"}}},
+      "manufacturer": {"type": "keyword"},
+      "category": {"type": "keyword"},
+      "params": {"type": "nested", "properties": {"code": {"type": "keyword"}, "num": {"type": "double"}, "text": {"type": "keyword"}}}
+    }
+  }
+}</pre>
+      <h3>Query patterns</h3>
+      <ul>
+        <li>If query looks like a part number (<code>^[A-Z0-9-_.]+$</code>), boost <code>mfr_part.exact</code> and <code>manufacturer</code>.</li>
+        <li>For category searches, filter by <code>category</code> and aggregate param buckets for UI filters.</li>
+      </ul>
+    </section>
+
+    <section id="api">
+      <h2>API Design (REST + OpenAPI)</h2>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th><th>Auth</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/api/v1/search</code></td><td>Full‑text + parametric</td><td>Public</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/products/:id</code></td><td>Product detail</td><td>Public</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/products/:id/datasheet</code></td><td>Signed URL for PDF</td><td>Public</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/rfq</code></td><td>Submit RFQ</td><td>Public (rate‑limited)</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/categories/tree</code></td><td>Category tree</td><td>Public</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/parameters?category=:id</code></td><td>Filter definitions</td><td>Public</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/admin/products</code></td><td>Create/update product</td><td>Admin</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/admin/import</code></td><td>Upload CSV/Excel for ETL</td><td>Admin</td></tr>
+        </tbody>
+      </table>
+      <p class="note">OpenAPI/Swagger is auto‑generated by NestJS; publish at <code>/docs</code> with auth.</p>
+    </section>
+
+    <section id="frontend">
+      <h2>Frontend (Next.js) Structure</h2>
+      <pre>src/
+  app/
+    (marketing)/
+    (catalog)/
+      category/[slug]/page.tsx
+      product/[id]/page.tsx
+    api/
+  components/
+  lib/
+  hooks/</pre>
+      <h3>Key components</h3>
+      <ul>
+        <li>Global search bar with instant suggestions (part number autocomplete).</li>
+        <li>Parametric filter panel (sticky, virtualized list for large parameter sets).</li>
+        <li>Comparison table (column diff highlighting).</li>
+        <li>RFQ drawer (slides in from right, collects items &amp; contact info).</li>
+      </ul>
+      <h3>Example: Product JSON‑LD (SEO)</h3>
+      <pre>&lt;script type="application/ld+json"&gt;
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "STM32F103C8T6",
+  "brand": {"@type": "Brand", "name": "STMicroelectronics"},
+  "mpn": "STM32F103C8T6",
+  "sku": "STM32F103C8T6-TR",
+  "category": "Microcontrollers",
+  "description": "32-bit ARM Cortex‑M3 MCU, 64KB Flash, 72MHz",
+  "image": ["https://cdn.example.com/img/stm32f103.jpg"],
+  "offers": {
+    "@type": "AggregateOffer",
+    "priceCurrency": "USD",
+    "lowPrice": "1.20",
+    "highPrice": "2.10",
+    "offerCount": "4",
+    "availability": "https://schema.org/InStock"
+  }
+}
+&lt;/script&gt;</pre>
+    </section>
+
+    <section id="i18n">
+      <h2>Internationalization (i18n), Currency, and Hreflang</h2>
+      <ul>
+        <li><strong>i18n:</strong> Next.js middleware negotiates locale (<code>en</code>, <code>zh</code>, <code>de</code>, ...). Content stored in <code>*_i18n</code> JSONB fields or CMS.</li>
+        <li><strong>Currency:</strong> Display via FX rates (hourly cache), price rounding rules, and per‑locale formatting.</li>
+        <li><strong>Hreflang:</strong> Generate <code>&lt;link rel="alternate" hreflang="..." href="..."/&gt;</code> per locale; consolidate <code>x-default</code> for fallback.</li>
+      </ul>
+      <h3>Sitemaps</h3>
+      <pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"&gt;
+  &lt;url&gt;
+    &lt;loc&gt;https://www.example.com/product/stm32f103c8t6&lt;/loc&gt;
+    &lt;xhtml:link rel="alternate" hreflang="en" href="https://www.example.com/en/product/stm32f103c8t6"/&gt;
+    &lt;xhtml:link rel="alternate" hreflang="zh" href="https://www.example.com/zh/product/stm32f103c8t6"/&gt;
+    &lt;xhtml:link rel="alternate" hreflang="x-default" href="https://www.example.com/product/stm32f103c8t6"/&gt;
+    &lt;lastmod&gt;2025-08-01&lt;/lastmod&gt;
+  &lt;/url&gt;
+&lt;/urlset&gt;</pre>
+    </section>
+
+    <section id="security">
+      <h2>Security &amp; Compliance Checklist</h2>
+      <ul>
+        <li>HTTPS everywhere; HSTS; TLS 1.2+.</li>
+        <li>OWASP Top 10: input validation (Zod/class‑validator), prepared statements (Prisma), CSRF on non‑API forms.</li>
+        <li>Rate limiting on <code>/api/v1/rfq</code>, auth endpoints (Redis token bucket).</li>
+        <li>Content Security Policy (CSP) + Subresource Integrity (SRI) for CDN assets.</li>
+        <li>Signed URLs for datasheet downloads (S3 presign, short TTL).</li>
+        <li>Audit logs for admin actions; role‑based permissions.</li>
+        <li>Privacy: cookie consent (GDPR), DPA review with SaaS vendors.</li>
+      </ul>
+    </section>
+
+    <section id="perf">
+      <h2>Performance Targets (Core Web Vitals)</h2>
+      <table>
+        <thead><tr><th>Metric</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr><td>LCP</td><td>&lt; 2.2 s</td></tr>
+          <tr><td>INP</td><td>&lt; 200 ms</td></tr>
+          <tr><td>CLS</td><td>&lt; 0.1</td></tr>
+          <tr><td>TTFB</td><td>&lt; 200 ms (cached)</td></tr>
+        </tbody>
+      </table>
+      <p>Tactics: static gen for category &amp; PDP hero sections; ISR for product pages; CDN caching; image optimization; route prefetch; code‑split heavy widgets.</p>
+    </section>
+
+    <section id="devops">
+      <h2>DevOps &amp; Environments</h2>
+      <table>
+        <thead><tr><th>Env</th><th>Purpose</th><th>URL pattern</th></tr></thead>
+        <tbody>
+          <tr><td><strong>dev</strong></td><td>feature branches, ephemeral previews</td><td><code>pr-###.dev.example.com</code></td></tr>
+          <tr><td><strong>staging</strong></td><td>QA, load testing</td><td><code>staging.example.com</code></td></tr>
+          <tr><td><strong>prod</strong></td><td>customer traffic</td><td><code>www.example.com</code></td></tr>
+        </tbody>
+      </table>
+      <h3>CI/CD pipeline (GitHub Actions)</h3>
+      <pre>name: ci
+on: [push]
+jobs:
+  build_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r build
+      - run: pnpm -r test -- --ci
+  deploy_prod:
+    if: github.ref == 'refs/heads/main'
+    needs: build_test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./infra/terraform/apply.sh</pre>
+      <h3>Terraform modules</h3>
+      <p>VPC, EKS/ECS, RDS Postgres, OpenSearch, ElastiCache Redis, S3, CloudFront/Cloudflare, ACM, Route 53.</p>
+    </section>
+
+    <section id="etl">
+      <h2>ETL: Supplier Data Import Pipeline</h2>
+      <table>
+        <thead><tr><th>Step</th><th>Input</th><th>Process</th><th>Output</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>CSV/Excel (pricing, stock)</td><td>Upload → S3</td><td>S3 object</td></tr>
+          <tr><td>2</td><td>Validate</td><td>Schema check with Great Expectations</td><td>Validated file</td></tr>
+          <tr><td>3</td><td>Transform</td><td>Map columns → internal model, normalize units</td><td>Staged tables</td></tr>
+          <tr><td>4</td><td>Load</td><td>Upsert to <code>product</code>, <code>variant</code>, <code>price_tier</code>, <code>inventory_lot</code></td><td>Live tables</td></tr>
+          <tr><td>5</td><td>Index</td><td>Push changed docs to OpenSearch</td><td>Updated index</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="links">
+      <h2>Notes &amp; Reference Links</h2>
+      <p>Finally, I want to say this: an <a href="https://www.szjxy-ic.com/">electronic chip website</a> can have tens of millions of entries, and you can't manually import them one by one. Most of the time, a typical backend can't handle this amount of data. For example, a WordPress backend wouldn't be able to handle 12 million IC records. Secondly, I recommend a VPS server.</p>
+      <p>I recommend <a href="https://hostinger.com" target="_blank" rel="noopener">hostinger.com</a>. The official website currently has an 8.5 rating.</p>
+      <p>You can check out these classic electronic chip purchasing sites:</p>
+      <ul>
+        <li><a href="https://www.szjxy-ic.com/" target="_blank" rel="noopener">https://www.szjxy-ic.com/</a></li>
+        <li><a href="https://www.pcbinq.com/" target="_blank" rel="noopener">https://www.pcbinq.com/</a></li>
+        <li><a href="https://www.digikey.com/" target="_blank" rel="noopener">https://www.digikey.com/</a></li>
+        <li><a href="https://www.mouser.com/" target="_blank" rel="noopener">https://www.mouser.com/</a></li>
+        <li><a href="https://www.joydo-ele.com/" target="_blank" rel="noopener">https://www.joydo-ele.com/</a></li>
+      </ul>
+      <p class="note">Tip: host this HTML as a static page to share the plan with your team.</p>
+    </section>
+
+    <footer>© 2025 Electronic Chip Site Spec — HTML rendering generated for presentation</footer>
+  </div>
+</body>
+</html>
